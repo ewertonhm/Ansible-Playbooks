@@ -1,0 +1,11 @@
+timezone: America/Sao_Paulo
+
+common_packages_redhat:
+  - git
+  - vim
+  - wget
+  - tree
+
+common_packages_debian:
+  - vim
+  - tree

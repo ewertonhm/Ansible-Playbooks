@@ -1,0 +1,70 @@
+---
+- name: SISOP | Add Motd
+  template: src=motd.sh dest=/etc/motd.sh force=yes owner=root group=root mode=0755
+
+- name: SISOP | Change /etc/profile
+  lineinfile: dest=/etc/profile line={{ item }}
+  with_items:
+    - '#--- Default export & Alias ---#'
+    - 'export HISTTIMEFORMAT="%d/%m/%Y - %H:%M:%S - "'
+    - 'export HISTSIZE="5000"'
+    - 'export HISTFILESIZE="5000"'
+    - 'export TERM=linux'
+    - 'alias ls="ls -lh --color"'
+    - 'alias grep="grep --color"'
+    - 'alias vi="vim"'
+    - 'alias rm="rm -i"'
+    - '/etc/motd.sh'
+
+- name: YUM | Install epel-repository
+  yum: name=epel-release state=latest
+  when: ansible_distribution == "CentOS" or ansible_distribution == "RedHat"
+
+- name: SISOP | Enable PowerTool Repository
+  replace:
+      dest=/etc/yum.repos.d/CentOS-PowerTools.repo
+      regexp='enabled=0'
+      replace='enabled=1'
+  when: ansible_distribution_major_version == "8"
+
+- name: YUM | Update System
+  yum: name=* state=latest update_cache=yes
+  when: ansible_distribution == "CentOS" or ansible_distribution == "RedHat"
+
+- name: YUM | Install common packages
+  yum: name={{ common_packages_redhat }} state=latest
+  when: ansible_distribution == "CentOS" or ansible_distribution == "RedHat"
+
+- name: Debian Like | Update Cache
+  apt: update_cache=yes
+  when: ansible_distribution == "Debian" or ansible_distribution == "Ubuntu"
+
+- name: Debian Like | Update System
+  apt: name="*" state=latest
+  when: ansible_distribution == "Debian" or ansible_distribution == "Ubuntu"
+
+- name: Debian Like | Install common packages
+  apt: name={{ common_packages_debian }} state=latest
+  when: ansible_distribution == "Debian" or ansible_distribution == "Ubuntu"
+
+- name: VIM | Copy .vimrc default
+  copy: src={{ item.src}} dest={{item.dest}}
+  with_items:
+          - { src: '.vimrc', dest: '/root/.vimrc' }
+          - { src: '.vimrc', dest: '/home/ozzy/.vimrc' }
+
+- name: TIME | Configurando localtime
+  file: src=/usr/share/zoneinfo/{{ timezone }} dest=/etc/localtime state=link force=yes
+
+- name: SSH | Add SSH Banner
+  copy: src=banner_ssh dest=/etc/ssh/banner_ssh 
+
+- name: SSH | Copy public.key
+  file: src=public.key, dest:/tmp/public.key owner=root group=root mode=0755
+
+- name: SSH | Add SSH Authorized Key
+  authorized_key:
+  user: root
+  state: present
+  key: "{{ lookup('file', '/tmp/public.key')}}"
+...
