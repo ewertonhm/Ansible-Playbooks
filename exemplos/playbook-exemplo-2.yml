@@ -1,0 +1,18 @@
+---
+- hosts: www
+  remote_user: ewerton
+  become: yes
+  become_user: root
+  order: sorted
+  tasks:
+  - name: Instalacao do Apache
+    yum:
+      name: httpd
+      state: latest
+    notify: restart apache
+  handlers:
+    - name: restart apache
+      systemd:
+        name: httpd
+        state: restart
+...
